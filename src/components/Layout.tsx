@@ -97,7 +97,7 @@ export default function Layout() {
             })}
           </p>
           <p className="flex items-center gap-3">
-            <span>Laetoli · TRA Innovation Challenge 2026</span>
+            <span>Laetoli · KODI360</span>
             <NavLink to="/officer/login" className="underline decoration-dotted hover:text-tz-black">
               {t(lang, { sw: 'Afisa wa TRA', en: 'TRA Officer' })}
             </NavLink>

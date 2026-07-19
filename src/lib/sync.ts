@@ -18,6 +18,23 @@ async function insertOne(table: string, payload: Record<string, unknown>): Promi
   if (error) throw new Error(error.message);
 }
 
+/** Upload a queued Blob to a private bucket under `${keyPrefix}/${ts}-${fileName}`. */
+async function uploadIfNeeded(
+  bucket: string,
+  keyPrefix: string,
+  blob: Blob | undefined,
+  fileName: string | undefined,
+  existingPath: string | undefined,
+): Promise<string | undefined> {
+  if (!blob || !fileName || existingPath) return existingPath;
+  const path = `${keyPrefix}/${Date.now()}-${fileName}`;
+  const { error } = await withApiLogging(`${bucket}.upload`, () =>
+    supabase.storage.from(bucket).upload(path, blob, { contentType: blob.type || 'application/octet-stream' }),
+  );
+  if (error) throw new Error(error.message);
+  return path;
+}
+
 export async function syncPendingRecords(): Promise<{ synced: number; failed: number }> {
   if (!isConfigured() || syncing || !navigator.onLine) return { synced: 0, failed: 0 };
   syncing = true;
@@ -28,13 +45,22 @@ export async function syncPendingRecords(): Promise<{ synced: number; failed: nu
     const pendingRegistrations = (await db.registrations.toArray()).filter((r) => !r.synced);
     for (const r of pendingRegistrations) {
       try {
+        const photoPath = await uploadIfNeeded(
+          'registration-photos',
+          r.phone,
+          r.photoBlob,
+          r.photoFileName,
+          r.photoPath,
+        );
+
         await insertOne('registrations', {
           name: r.name,
           phone: r.phone,
           location: r.location,
           activity: r.activity,
+          photo_path: photoPath ?? null,
         });
-        await db.registrations.update(r.id!, { synced: true });
+        await db.registrations.update(r.id!, { synced: true, photoPath });
         synced++;
       } catch {
         failed++;
@@ -60,17 +86,13 @@ export async function syncPendingRecords(): Promise<{ synced: number; failed: nu
     const pendingDisputes = (await db.disputes.toArray()).filter((d) => !d.synced);
     for (const d of pendingDisputes) {
       try {
-        let evidencePath = d.evidencePath;
-        if (d.evidenceBlob && d.evidenceFileName && !evidencePath) {
-          const path = `${d.reference}/${Date.now()}-${d.evidenceFileName}`;
-          const { error: uploadError } = await withApiLogging('dispute-evidence.upload', () =>
-            supabase.storage.from('dispute-evidence').upload(path, d.evidenceBlob!, {
-              contentType: d.evidenceBlob!.type || 'application/octet-stream',
-            }),
-          );
-          if (uploadError) throw new Error(uploadError.message);
-          evidencePath = path;
-        }
+        const evidencePath = await uploadIfNeeded(
+          'dispute-evidence',
+          d.reference,
+          d.evidenceBlob,
+          d.evidenceFileName,
+          d.evidencePath,
+        );
 
         await insertOne('disputes', {
           reference: d.reference,

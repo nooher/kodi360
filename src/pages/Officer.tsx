@@ -6,6 +6,7 @@ import { supabase, isConfigured } from '../lib/supabase';
 import { withApiLogging } from '../lib/api-logger';
 import { getHealthStatus, type HealthStatus } from '../lib/health';
 import OfficerSecurity from '../components/OfficerSecurity';
+import OfficerErrorLog from '../components/OfficerErrorLog';
 
 type Tab = 'registrations' | 'receipts' | 'disputes';
 
@@ -130,11 +131,16 @@ export default function Officer() {
     }
   }
 
-  async function openEvidence(path: string) {
+  const FILE_COLUMNS: Record<string, string> = {
+    evidence_path: 'dispute-evidence',
+    photo_path: 'registration-photos',
+  };
+
+  async function openFile(bucket: string, path: string) {
     setActionError('');
     try {
-      const { data, error } = await withApiLogging('dispute-evidence.sign', () =>
-        supabase.storage.from('dispute-evidence').createSignedUrl(path, 300),
+      const { data, error } = await withApiLogging(`${bucket}.sign`, () =>
+        supabase.storage.from(bucket).createSignedUrl(path, 300),
       );
       if (error || !data) throw new Error(error?.message ?? 'Imeshindwa kupata kiungo.');
       window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
@@ -191,6 +197,7 @@ export default function Officer() {
       )}
 
       <OfficerSecurity />
+      <OfficerErrorLog />
 
       <div className="flex gap-2 mb-6 flex-wrap">
         {TABS.map((tb) => {
@@ -251,9 +258,9 @@ export default function Officer() {
                           <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL[String(r[k])] ?? 'bg-tz-black/5'}`}>
                             {String(r[k])}
                           </span>
-                        ) : k === 'evidence_path' && r[k] ? (
+                        ) : FILE_COLUMNS[k] && r[k] ? (
                           <button
-                            onClick={() => void openEvidence(String(r[k]))}
+                            onClick={() => void openFile(FILE_COLUMNS[k], String(r[k]))}
                             className="inline-flex items-center gap-1 text-xs font-semibold text-tz-blue hover:underline"
                           >
                             <Paperclip className="h-3 w-3" />

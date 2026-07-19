@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { UserPlus, CheckCircle2, Clock, WifiOff, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle2, Clock, WifiOff, AlertCircle, Camera } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { db } from '../lib/db';
 import { registrationSchema, fieldErrors } from '../lib/validation';
@@ -24,8 +24,25 @@ export default function Rasimisha() {
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [limitMsg, setLimitMsg] = useState('');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoFileError, setPhotoFileError] = useState('');
 
   const registrations = useLiveQuery(() => db.registrations.orderBy('createdAt').reverse().toArray(), []);
+
+  const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+  function onPickPhoto(f: File | null) {
+    setPhotoFileError('');
+    if (!f) {
+      setPhoto(null);
+      return;
+    }
+    if (f.size > MAX_PHOTO_BYTES) {
+      setPhotoFileError(t(lang, { sw: 'Picha kubwa mno (upeo MB 8).', en: 'Photo too large (8MB max).' }));
+      return;
+    }
+    setPhoto(f);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,10 +73,12 @@ export default function Rasimisha() {
       activity: parsed.data.activity,
       createdAt: Date.now(),
       synced: false,
+      ...(photo ? { photoBlob: photo, photoFileName: photo.name } : {}),
     });
     setName('');
     setPhone('');
     setLocation('');
+    setPhoto(null);
     setJustSubmitted(true);
     setTimeout(() => setJustSubmitted(false), 4000);
     void syncPendingRecords();
@@ -109,6 +128,20 @@ export default function Rasimisha() {
               {ACTIVITIES.map((a) => <option key={a.value} value={a.value}>{t(lang, a)}</option>)}
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-semibold text-tz-black mb-1.5">
+              {t(lang, { sw: 'Picha ya duka/eneo la biashara (si lazima)', en: 'Photo of stall/business (optional)' })}
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
+              className="w-full rounded-lg border border-tz-black/15 px-3 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-tz-black/5 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+            />
+            {photo && <p className="mt-1 text-xs text-tz-green-dark inline-flex items-center gap-1"><Camera className="h-3 w-3" />{photo.name}</p>}
+            {photoFileError && <p className="mt-1 text-xs text-red-600">{photoFileError}</p>}
+          </div>
           <button type="submit" className="w-full rounded-xl bg-tz-green px-4 py-3 font-semibold text-white hover:bg-tz-green-dark">
             {t(lang, { sw: 'Wasilisha usajili', en: 'Submit registration' })}
           </button>
@@ -138,7 +171,10 @@ export default function Rasimisha() {
             {(registrations ?? []).map((r) => (
               <div key={r.id} className="rounded-xl border border-tz-black/10 bg-paper p-4">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-tz-black">{r.name}</p>
+                  <p className="font-semibold text-tz-black inline-flex items-center gap-1.5">
+                    {r.name}
+                    {(r.photoFileName || r.photoPath) && <Camera className="h-3.5 w-3.5 opacity-50" />}
+                  </p>
                   {r.synced ? (
                     <span className="inline-flex items-center gap-1 text-xs rounded-full bg-tz-green/15 text-tz-green-dark px-2 py-0.5">
                       <CheckCircle2 className="h-3 w-3" />

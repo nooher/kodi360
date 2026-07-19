@@ -65,7 +65,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 sm:py-20">
           <div className="inline-flex items-center gap-2 rounded-full bg-tz-green/10 text-tz-green-dark px-3 py-1 text-xs font-semibold mb-5">
             <LayoutGrid className="h-3.5 w-3.5" />
-            {t(lang, { sw: 'TRA Innovation Challenge 2026', en: 'TRA Innovation Challenge 2026' })}
+            {t(lang, { sw: 'Jukwaa la Kodi la Taifa', en: 'National Tax Platform' })}
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-tz-black max-w-3xl">
             {t(lang, {

@@ -12,6 +12,11 @@ export interface Registration {
   activity: string;
   createdAt: number;
   synced: boolean;
+  /** Optional stall/shopfront photo, queued offline; uploaded to Storage on sync. */
+  photoBlob?: Blob;
+  photoFileName?: string;
+  /** Set once the photo has been uploaded (Storage object path). */
+  photoPath?: string;
 }
 
 export interface ReceiptRecord {
