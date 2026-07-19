@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tz-green: #14803c;
+  --color-tz-green-dark: #0b5c2a;
+  --color-tz-gold: #f2b705;
+  --color-tz-black: #14151a;
+  --color-tz-blue: #0072ba;
+  --color-paper: #f7f5ef;
+  --color-paper-dark: #14151a;
+  --color-ink: #1c1d22;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: var(--color-paper-dark);
+    color: #ece9e2;
+  }
+}
+
+:root[data-theme="dark"] body {
+  background: var(--color-paper-dark);
+  color: #ece9e2;
+}
+
+:root[data-theme="light"] body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+/* Overflow-safe scroll containers for wide tables/code on small screens. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
