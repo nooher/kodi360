@@ -5,6 +5,7 @@ import { useLang, t } from '../lib/i18n';
 import { db } from '../lib/db';
 import { registrationSchema, fieldErrors } from '../lib/validation';
 import { checkRateLimit } from '../lib/rate-limit';
+import { syncPendingRecords } from '../lib/sync';
 
 const ACTIVITIES = [
   { value: 'mama_lishe', sw: 'Mama lishe / chakula', en: 'Food vendor' },
@@ -61,6 +62,7 @@ export default function Rasimisha() {
     setLocation('');
     setJustSubmitted(true);
     setTimeout(() => setJustSubmitted(false), 4000);
+    void syncPendingRecords();
   }
 
   return (
@@ -137,10 +139,17 @@ export default function Rasimisha() {
               <div key={r.id} className="rounded-xl border border-tz-black/10 bg-paper p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-tz-black">{r.name}</p>
-                  <span className="inline-flex items-center gap-1 text-xs rounded-full bg-tz-gold/20 text-tz-black/70 px-2 py-0.5">
-                    <Clock className="h-3 w-3" />
-                    {t(lang, { sw: 'Inasubiri usawazishaji', en: 'Pending sync' })}
-                  </span>
+                  {r.synced ? (
+                    <span className="inline-flex items-center gap-1 text-xs rounded-full bg-tz-green/15 text-tz-green-dark px-2 py-0.5">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {t(lang, { sw: 'Imesawazishwa', en: 'Synced' })}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs rounded-full bg-tz-gold/20 text-tz-black/70 px-2 py-0.5">
+                      <Clock className="h-3 w-3" />
+                      {t(lang, { sw: 'Inasubiri usawazishaji', en: 'Pending sync' })}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-tz-black/55 mt-1">{r.phone} · {r.location}</p>
               </div>

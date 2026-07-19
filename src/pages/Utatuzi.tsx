@@ -5,6 +5,7 @@ import { useLang, t } from '../lib/i18n';
 import { db, genReference } from '../lib/db';
 import { computeTimeline } from '../lib/utatuzi';
 import { disputeSchema, fieldErrors } from '../lib/validation';
+import { syncPendingRecords } from '../lib/sync';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-TZ').format(Math.round(n));
@@ -47,10 +48,12 @@ export default function Utatuzi() {
       decisionDate: parsed.data.decisionDate.getTime(),
       status: 'filed',
       createdAt: Date.now(),
+      synced: false,
     });
     setDecisionDate('');
     setAssessed('');
     setUndisputed('0');
+    void syncPendingRecords();
   }
 
   return (

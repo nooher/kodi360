@@ -32,6 +32,7 @@ export interface DisputeRecord {
   decisionDate: number;
   status: 'draft' | 'filed';
   createdAt: number;
+  synced: boolean;
 }
 
 class Kodi360DB extends Dexie {
@@ -46,6 +47,11 @@ class Kodi360DB extends Dexie {
       receipts: '++id, receiptNo, createdAt, synced',
       disputes: '++id, reference, decisionDate, createdAt',
     });
+    this.version(2).stores({
+      registrations: '++id, phone, synced, createdAt',
+      receipts: '++id, receiptNo, createdAt, synced',
+      disputes: '++id, reference, decisionDate, createdAt, synced',
+    }).upgrade((tx) => tx.table('disputes').toCollection().modify((d) => { d.synced = false; }));
   }
 }
 

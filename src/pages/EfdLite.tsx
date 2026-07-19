@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Receipt, WifiOff, Clock, AlertCircle } from 'lucide-react';
+import { Receipt, WifiOff, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { db, genReceiptNo } from '../lib/db';
 import { receiptSchema, fieldErrors } from '../lib/validation';
 import { checkRateLimit } from '../lib/rate-limit';
+import { syncPendingRecords } from '../lib/sync';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-TZ').format(Math.round(n));
@@ -61,6 +62,7 @@ export default function EfdLite() {
     setItem('');
     setAmount('');
     setBuyerPhone('');
+    void syncPendingRecords();
   }
 
   return (
@@ -140,9 +142,15 @@ export default function EfdLite() {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-tz-black">TZS {fmt(r.amount)}</p>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-tz-black/45">
-                    <Clock className="h-3 w-3" /> {t(lang, { sw: 'inasubiri', en: 'pending' })}
-                  </span>
+                  {r.synced ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-tz-green-dark">
+                      <CheckCircle2 className="h-3 w-3" /> {t(lang, { sw: 'imesawazishwa', en: 'synced' })}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-tz-black/45">
+                      <Clock className="h-3 w-3" /> {t(lang, { sw: 'inasubiri', en: 'pending' })}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
