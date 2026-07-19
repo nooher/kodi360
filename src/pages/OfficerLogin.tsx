@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, KeyRound } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLang, t } from '../lib/i18n';
 import { isConfigured } from '../lib/supabase';
 
 export default function OfficerLogin() {
-  const { login, loginDemo, isAuthenticated } = useAuth();
+  const { login, loginDemo, isAuthenticated, mfaPending, verifyMfaChallenge } = useAuth();
   const { lang } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -26,6 +27,61 @@ export default function OfficerLogin() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function submitMfa(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      await verifyMfaChallenge(code);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Msimbo si sahihi');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (mfaPending) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-tz-black/10 bg-white p-8">
+          <div className="h-12 w-12 rounded-xl bg-tz-green flex items-center justify-center text-white mx-auto mb-4">
+            <KeyRound className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold text-tz-black text-center mb-1">
+            {t(lang, { sw: 'Uthibitisho wa Hatua ya Pili (2FA)', en: 'Two-Factor Verification' })}
+          </h1>
+          <p className="text-sm text-tz-black/50 text-center mb-6">
+            {t(lang, {
+              sw: 'Ingiza msimbo wa tarakimu 6 kutoka programu yako ya uthibitisho (Authenticator).',
+              en: 'Enter the 6-digit code from your authenticator app.',
+            })}
+          </p>
+          <form onSubmit={submitMfa} className="space-y-3">
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="000000"
+              className="w-full rounded-lg border border-tz-black/15 px-3 py-2.5 text-center text-lg tracking-[0.4em] font-mono"
+              autoFocus
+            />
+            {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy || code.length !== 6}
+              className="w-full rounded-xl bg-tz-green px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {t(lang, { sw: 'Thibitisha', en: 'Verify' })}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (

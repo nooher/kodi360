@@ -33,6 +33,11 @@ export interface DisputeRecord {
   status: 'draft' | 'filed';
   createdAt: number;
   synced: boolean;
+  /** Supporting evidence file, queued offline; uploaded to Storage on sync. */
+  evidenceBlob?: Blob;
+  evidenceFileName?: string;
+  /** Set once the evidence file has been uploaded (Storage object path). */
+  evidencePath?: string;
 }
 
 class Kodi360DB extends Dexie {

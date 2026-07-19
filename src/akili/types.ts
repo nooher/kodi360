@@ -28,6 +28,8 @@ export interface AkiliBias {
 export interface AkiliSource {
   label: string;
   ref?: string;
+  /** Optional clickable URL, when the source is a real linkable page. */
+  url?: string;
 }
 
 export interface AkiliAnswer {

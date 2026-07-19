@@ -28,6 +28,8 @@ const ABOUT_SW =
   '• EFD/VFD na risiti za kielektroniki\n' +
   '• Pingamizi na rufaa dhidi ya tathmini ya kodi\n' +
   '• Adhabu, riba, PAYE, forodha, na taasisi husika (BRELA/NIDA/TCRA)\n' +
+  '• Kodi ya zuio (WHT), stempu, SDL, cheti cha kodi, kodi ya kupangisha, faida ya mtaji\n' +
+  '• Ukaguzi wa kodi, kuripoti rushwa, kodi Zanzibar, na e-invoicing\n' +
   'Niulize chochote kuhusu kodi.';
 
 const ABOUT_EN =
@@ -37,6 +39,8 @@ const ABOUT_EN =
   '• EFD/VFD and electronic receipts\n' +
   '• Objections and appeals against a tax assessment\n' +
   '• Penalties, interest, PAYE, customs, and related institutions (BRELA/NIDA/TCRA)\n' +
+  '• Withholding tax (WHT), stamp duty, SDL, tax clearance, rental income, capital gains\n' +
+  '• Tax audits, reporting corruption, Zanzibar taxes, and e-invoicing\n' +
   'Ask me anything about tax.';
 
 export const jumlaExpert: DomainExpert = {

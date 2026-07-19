@@ -55,4 +55,80 @@ describe('kodiExpert.answer', () => {
     const data = a.data as { entry: string };
     expect(data.entry).toBe('efd-vfd');
   });
+
+  it('retrieves the withholding tax entry, not a wrong default', async () => {
+    const a = await kodiExpert.answer(q('kodi ya zuio ni nini'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('kodi-zuio-wht');
+  });
+
+  it('retrieves the stamp duty entry', async () => {
+    const a = await kodiExpert.answer(q('stamp duty ni nini kwa mkataba wa pango'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('stempu-stamp-duty');
+  });
+
+  it('retrieves the SDL entry and routes it to the kodi domain (not jumla)', async () => {
+    const a = await kodiExpert.answer(q('skills development levy ni asilimia ngapi'));
+    expect(a.domain).toBe('kodi');
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('sdl');
+  });
+
+  it('retrieves the tax clearance certificate entry', async () => {
+    const a = await kodiExpert.answer(q('tax clearance certificate napataje'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('cheti-cha-kodi');
+  });
+
+  it('retrieves the rental income entry', async () => {
+    const a = await kodiExpert.answer(q('kodi ya nyumba ninayopangisha'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('kodi-kupangisha-nyumba');
+  });
+
+  it('retrieves the capital gains entry', async () => {
+    const a = await kodiExpert.answer(q('nikiuza kiwanja nalipa capital gains tax gani'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('kodi-faida-ya-mtaji');
+  });
+
+  it('retrieves the tax audit entry', async () => {
+    const a = await kodiExpert.answer(q('tra wananikagua tax audit nifanye nini'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('ukaguzi-wa-kodi');
+  });
+
+  it('retrieves the corruption-reporting entry', async () => {
+    const a = await kodiExpert.answer(q('afisa wa tra ananiomba rushwa nifanye nini'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('kuripoti-rushwa');
+  });
+
+  it('retrieves the Zanzibar taxes entry', async () => {
+    const a = await kodiExpert.answer(q('kodi zanzibar zrb zinatofautianaje na tra'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('kodi-zanzibar');
+  });
+
+  it('retrieves the e-invoicing entry', async () => {
+    const a = await kodiExpert.answer(q('e-invoicing ni nini na inafanyaje kazi'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('e-invoicing');
+  });
+
+  it('retrieves the enforcement entry for an account-frozen query', async () => {
+    const a = await kodiExpert.answer(q('tra wamefunga akaunti yangu ya benki'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('utekelezaji-kufunga-akaunti');
+  });
+
+  it('gives an honest "no specific info" answer instead of a wrong default when nothing real matches', async () => {
+    // "kodi" alone triggers domain-level routing but shares no real per-entry cue.
+    const a = await kodiExpert.answer(q('kodi ya samaki wa baharini'));
+    const data = a.data as { entry: string };
+    expect(data.entry).toBe('no-match');
+    expect(a.confidence).toBe('low');
+    expect(/sina taarifa mahususi/i.test(a.text.sw)).toBe(true);
+  });
 });

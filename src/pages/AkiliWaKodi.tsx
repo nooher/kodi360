@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Send, WifiOff, User } from 'lucide-react';
+import { Bot, Send, WifiOff, User, ExternalLink } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { akili, createAkiliSession, type AkiliSession } from '../akili';
 import type { AkiliAnswer } from '../akili/types';
@@ -17,6 +17,9 @@ const SUGGESTIONS_SW = [
   'Nikadirie kodi ya makadirio kwa biashara ndogo',
   'Nikipinga tathmini ya kodi, nifanye nini?',
   'EFD au VFD, tofauti yake ni nini?',
+  'Kodi ya zuio (WHT) ni nini?',
+  'Afisa wa TRA ananiomba rushwa, nifanye nini?',
+  'Kodi ya nyumba ninayopangisha ni ipi?',
 ];
 
 let idSeq = 0;
@@ -88,11 +91,24 @@ export default function AkiliWaKodi() {
               {m.text}
               {m.answer?.sources && m.answer.sources.length > 0 && (
                 <div className="mt-2.5 pt-2.5 border-t border-tz-black/10 flex flex-wrap gap-1.5">
-                  {m.answer.sources.map((s, i) => (
-                    <span key={i} className="text-[11px] rounded-full bg-tz-black/5 px-2 py-0.5 text-tz-black/60">
-                      {s.label}
-                    </span>
-                  ))}
+                  {m.answer.sources.map((s, i) =>
+                    s.url ? (
+                      <a
+                        key={i}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] rounded-full bg-tz-blue/10 px-2 py-0.5 text-tz-blue hover:bg-tz-blue/20 underline decoration-dotted"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" />
+                        {s.label}
+                      </a>
+                    ) : (
+                      <span key={i} className="text-[11px] rounded-full bg-tz-black/5 px-2 py-0.5 text-tz-black/60">
+                        {s.label}
+                      </span>
+                    ),
+                  )}
                 </div>
               )}
             </div>

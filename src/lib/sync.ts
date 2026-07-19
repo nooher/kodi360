@@ -60,14 +60,27 @@ export async function syncPendingRecords(): Promise<{ synced: number; failed: nu
     const pendingDisputes = (await db.disputes.toArray()).filter((d) => !d.synced);
     for (const d of pendingDisputes) {
       try {
+        let evidencePath = d.evidencePath;
+        if (d.evidenceBlob && d.evidenceFileName && !evidencePath) {
+          const path = `${d.reference}/${Date.now()}-${d.evidenceFileName}`;
+          const { error: uploadError } = await withApiLogging('dispute-evidence.upload', () =>
+            supabase.storage.from('dispute-evidence').upload(path, d.evidenceBlob!, {
+              contentType: d.evidenceBlob!.type || 'application/octet-stream',
+            }),
+          );
+          if (uploadError) throw new Error(uploadError.message);
+          evidencePath = path;
+        }
+
         await insertOne('disputes', {
           reference: d.reference,
           assessed_amount: d.assessedAmount,
           undisputed_amount: d.undisputedAmount,
           decision_date: new Date(d.decisionDate).toISOString().slice(0, 10),
           status: d.status,
+          evidence_path: evidencePath ?? null,
         });
-        await db.disputes.update(d.id!, { synced: true });
+        await db.disputes.update(d.id!, { synced: true, evidencePath });
         synced++;
       } catch {
         failed++;
