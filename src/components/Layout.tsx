@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Menu, X, Globe } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
+import InstallButton from './InstallButton';
 
 const NAV = [
   { to: '/', sw: 'Nyumbani', en: 'Home' },
@@ -45,6 +46,9 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <InstallButton compact />
+            </div>
             <button
               onClick={toggle}
               className="flex items-center gap-1.5 rounded-lg border border-tz-black/15 px-3 py-1.5 text-sm font-semibold text-tz-black/80 hover:bg-tz-black/5"

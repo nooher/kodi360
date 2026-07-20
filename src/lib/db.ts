@@ -1,23 +1,10 @@
-// db.ts — KODI360's offline-first local store (IndexedDB via Dexie). Every
-// module writes here first and syncs later when connectivity returns, so
-// registration, receipts, and disputes all work with zero network.
+// db.ts — KODI360's offline-first local store (IndexedDB via Dexie). Receipts
+// and disputes are queued here first and synced when connectivity returns —
+// both require a signed-in trader (see migration 0008). Registration is no
+// longer queued here: it's the trader sign-up flow (Rasimisha), which
+// inherently requires connectivity for the account-creation call itself.
 
 import Dexie, { type EntityTable } from 'dexie';
-
-export interface Registration {
-  id?: number;
-  name: string;
-  phone: string;
-  location: string;
-  activity: string;
-  createdAt: number;
-  synced: boolean;
-  /** Optional stall/shopfront photo, queued offline; uploaded to Storage on sync. */
-  photoBlob?: Blob;
-  photoFileName?: string;
-  /** Set once the photo has been uploaded (Storage object path). */
-  photoPath?: string;
-}
 
 export interface ReceiptRecord {
   id?: number;
@@ -46,7 +33,6 @@ export interface DisputeRecord {
 }
 
 class Kodi360DB extends Dexie {
-  registrations!: EntityTable<Registration, 'id'>;
   receipts!: EntityTable<ReceiptRecord, 'id'>;
   disputes!: EntityTable<DisputeRecord, 'id'>;
 
@@ -62,6 +48,13 @@ class Kodi360DB extends Dexie {
       receipts: '++id, receiptNo, createdAt, synced',
       disputes: '++id, reference, decisionDate, createdAt, synced',
     }).upgrade((tx) => tx.table('disputes').toCollection().modify((d) => { d.synced = false; }));
+    // v3: registrations moved to the trader sign-up flow (immediate online
+    // insert, no local queue) — drop the now-unused local table.
+    this.version(3).stores({
+      registrations: null,
+      receipts: '++id, receiptNo, createdAt, synced',
+      disputes: '++id, reference, decisionDate, createdAt, synced',
+    });
   }
 }
 

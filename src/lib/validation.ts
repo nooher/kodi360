@@ -2,6 +2,7 @@
 // Field-level error maps so each input can show its own message.
 
 import { z } from 'zod';
+import { isValidNida, isValidTin } from './traderIdentity';
 
 export const registrationSchema = z.object({
   name: z.string().trim().min(2, { message: 'Jina fupi mno' }).max(120),
@@ -14,6 +15,36 @@ export const registrationSchema = z.object({
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
+
+export const traderSignUpSchema = z
+  .object({
+    idType: z.enum(['nida', 'tin']),
+    idNumber: z.string().trim().min(1, { message: 'Andika namba ya NIDA au TIN' }),
+    password: z.string().min(8, { message: 'Nenosiri liwe angalau herufi/tarakimu 8' }),
+    confirmPassword: z.string(),
+    name: z.string().trim().min(2, { message: 'Jina fupi mno' }).max(120),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^0\d{9}$/, { message: 'Namba ya simu isiyo sahihi (mfano 0712345678)' }),
+    location: z.string().trim().max(200).optional().default(''),
+    activity: z.string().trim().min(1, { message: 'Chagua aina ya biashara' }),
+  })
+  .refine((v) => v.password === v.confirmPassword, { message: 'Manenosiri hayafanani', path: ['confirmPassword'] })
+  .refine((v) => (v.idType === 'nida' ? isValidNida(v.idNumber) : isValidTin(v.idNumber)), {
+    message: 'Namba si sahihi kwa aina uliyochagua (NIDA: tarakimu 20; TIN: tarakimu 9–10)',
+    path: ['idNumber'],
+  });
+
+export type TraderSignUpInput = z.infer<typeof traderSignUpSchema>;
+
+export const traderLoginSchema = z.object({
+  idType: z.enum(['nida', 'tin']),
+  idNumber: z.string().trim().min(1, { message: 'Andika namba ya NIDA au TIN' }),
+  password: z.string().min(1, { message: 'Andika nenosiri' }),
+});
+
+export type TraderLoginInput = z.infer<typeof traderLoginSchema>;
 
 export const receiptSchema = z.object({
   item: z.string().trim().min(1, { message: 'Andika bidhaa/huduma' }).max(200),

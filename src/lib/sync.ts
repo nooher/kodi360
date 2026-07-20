@@ -1,6 +1,11 @@
-// sync.ts — pushes Dexie-queued offline records (registrations/receipts/
-// disputes) to Supabase once the device is back online. No-ops gracefully
-// when Supabase isn't configured (offline-only demo mode).
+// sync.ts — pushes Dexie-queued offline records (receipts/disputes) to
+// Supabase once the device is back online. No-ops gracefully when Supabase
+// isn't configured (offline-only demo mode) or when no trader is signed in
+// (receipts/disputes are trader-owned now — see migration 0008).
+//
+// Registrations are no longer queued here: Rasimisha is the trader sign-up
+// flow, which inherently requires connectivity for the auth call itself, so
+// the initial registration row is inserted directly at sign-up time.
 //
 // IMPORTANT: supabase-js never THROWS on a Postgrest/RLS rejection — it
 // resolves with `{ data, error }`. Every insert below explicitly checks
@@ -37,40 +42,21 @@ async function uploadIfNeeded(
 
 export async function syncPendingRecords(): Promise<{ synced: number; failed: number }> {
   if (!isConfigured() || syncing || !navigator.onLine) return { synced: 0, failed: 0 };
+
+  const { data: userData } = await supabase.auth.getUser();
+  const traderId = userData.user?.id;
+  if (!traderId) return { synced: 0, failed: 0 }; // receipts/disputes are trader-owned; nothing to do if signed out
+
   syncing = true;
   let synced = 0;
   let failed = 0;
 
   try {
-    const pendingRegistrations = (await db.registrations.toArray()).filter((r) => !r.synced);
-    for (const r of pendingRegistrations) {
-      try {
-        const photoPath = await uploadIfNeeded(
-          'registration-photos',
-          r.phone,
-          r.photoBlob,
-          r.photoFileName,
-          r.photoPath,
-        );
-
-        await insertOne('registrations', {
-          name: r.name,
-          phone: r.phone,
-          location: r.location,
-          activity: r.activity,
-          photo_path: photoPath ?? null,
-        });
-        await db.registrations.update(r.id!, { synced: true, photoPath });
-        synced++;
-      } catch {
-        failed++;
-      }
-    }
-
     const pendingReceipts = (await db.receipts.toArray()).filter((r) => !r.synced);
     for (const r of pendingReceipts) {
       try {
         await insertOne('receipts', {
+          trader_id: traderId,
           receipt_no: r.receiptNo,
           item: r.item,
           amount: r.amount,
@@ -95,6 +81,7 @@ export async function syncPendingRecords(): Promise<{ synced: number; failed: nu
         );
 
         await insertOne('disputes', {
+          trader_id: traderId,
           reference: d.reference,
           assessed_amount: d.assessedAmount,
           undisputed_amount: d.undisputedAmount,

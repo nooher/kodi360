@@ -6,6 +6,7 @@ import { db, genReceiptNo } from '../lib/db';
 import { receiptSchema, fieldErrors } from '../lib/validation';
 import { checkRateLimit } from '../lib/rate-limit';
 import { syncPendingRecords } from '../lib/sync';
+import TraderHeader from '../components/TraderHeader';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-TZ').format(Math.round(n));
@@ -67,6 +68,7 @@ export default function EfdLite() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-10">
+      <TraderHeader />
       <div className="flex items-center gap-3 mb-2">
         <div className="h-11 w-11 rounded-xl bg-tz-green flex items-center justify-center text-white">
           <Receipt className="h-6 w-6" />

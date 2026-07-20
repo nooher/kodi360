@@ -8,6 +8,10 @@ import { getHealthStatus, type HealthStatus } from '../lib/health';
 import OfficerSecurity from '../components/OfficerSecurity';
 import OfficerErrorLog from '../components/OfficerErrorLog';
 import ConsoleStats from '../components/ConsoleStats';
+import {
+  healthStatusLabel, upDownLabel, activeInactiveLabel,
+  anyStatusLabel, activityLabel,
+} from '../lib/statusLabels';
 
 type Tab = 'registrations' | 'receipts' | 'disputes';
 
@@ -16,6 +20,41 @@ interface Row {
   status?: string;
   [key: string]: unknown;
 }
+
+interface ColumnDef {
+  key: string;
+  label: { sw: string; en: string };
+  kind?: 'status' | 'activity' | 'amount' | 'date' | 'file';
+  bucket?: string;
+}
+
+const COLUMNS: Record<Tab, ColumnDef[]> = {
+  registrations: [
+    { key: 'name', label: { sw: 'Jina', en: 'Name' } },
+    { key: 'phone', label: { sw: 'Simu', en: 'Phone' } },
+    { key: 'location', label: { sw: 'Eneo', en: 'Location' } },
+    { key: 'activity', label: { sw: 'Aina ya biashara', en: 'Activity' }, kind: 'activity' },
+    { key: 'photo_path', label: { sw: 'Picha', en: 'Photo' }, kind: 'file', bucket: 'registration-photos' },
+    { key: 'status', label: { sw: 'Hali', en: 'Status' }, kind: 'status' },
+    { key: 'created_at', label: { sw: 'Tarehe', en: 'Date' }, kind: 'date' },
+  ],
+  receipts: [
+    { key: 'receipt_no', label: { sw: 'Namba ya risiti', en: 'Receipt no.' } },
+    { key: 'item', label: { sw: 'Bidhaa/huduma', en: 'Item/service' } },
+    { key: 'amount', label: { sw: 'Kiasi (TZS)', en: 'Amount (TZS)' }, kind: 'amount' },
+    { key: 'buyer_phone', label: { sw: 'Simu ya mteja', en: 'Buyer phone' } },
+    { key: 'created_at', label: { sw: 'Tarehe', en: 'Date' }, kind: 'date' },
+  ],
+  disputes: [
+    { key: 'reference', label: { sw: 'Kumbukumbu', en: 'Reference' } },
+    { key: 'assessed_amount', label: { sw: 'Kodi iliyokadiriwa', en: 'Assessed tax' }, kind: 'amount' },
+    { key: 'undisputed_amount', label: { sw: 'Isiyobishaniwa', en: 'Undisputed' }, kind: 'amount' },
+    { key: 'decision_date', label: { sw: 'Tarehe ya uamuzi', en: 'Decision date' }, kind: 'date' },
+    { key: 'evidence_path', label: { sw: 'Ushahidi', en: 'Evidence' }, kind: 'file', bucket: 'dispute-evidence' },
+    { key: 'status', label: { sw: 'Hali', en: 'Status' }, kind: 'status' },
+    { key: 'created_at', label: { sw: 'Iliwasilishwa', en: 'Filed on' }, kind: 'date' },
+  ],
+};
 
 const DEMO_ROWS: Record<Tab, Row[]> = {
   registrations: [
@@ -51,6 +90,17 @@ const DISPUTE_ACTIONS: { status: string; sw: string; en: string; tone: string; f
   { status: 'under_review', sw: 'Chukua', en: 'Take up', tone: 'bg-tz-blue text-white hover:bg-tz-blue/90' },
   { status: 'resolved', sw: 'Maliza', en: 'Resolve', tone: 'bg-tz-green text-white hover:bg-tz-green-dark', finalOnly: true },
 ];
+
+function fmtAmount(n: unknown): string {
+  const num = Number(n);
+  return Number.isFinite(num) ? new Intl.NumberFormat('en-TZ').format(num) : String(n ?? '—');
+}
+
+function fmtDate(v: unknown): string {
+  if (!v) return '—';
+  const d = new Date(String(v));
+  return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString();
+}
 
 const STATUS_PILL: Record<string, string> = {
   pending: 'bg-tz-gold/20 text-tz-black/70',
@@ -136,11 +186,6 @@ export default function Officer() {
     }
   }
 
-  const FILE_COLUMNS: Record<string, string> = {
-    evidence_path: 'dispute-evidence',
-    photo_path: 'registration-photos',
-  };
-
   async function openFile(bucket: string, path: string) {
     setActionError('');
     try {
@@ -157,7 +202,7 @@ export default function Officer() {
   const isAdmin = isDemoMode ? true : user?.role === 'admin';
   const allActions = tab === 'registrations' ? REGISTRATION_ACTIONS : tab === 'disputes' ? DISPUTE_ACTIONS : null;
   const actions = allActions ? allActions.filter((a) => isAdmin || !a.finalOnly) : null;
-  const columns = rows[0] ? Object.keys(rows[0]).filter((k) => k !== 'id') : [];
+  const columns = COLUMNS[tab].filter((c) => rows.length === 0 || c.key in rows[0]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-8">
@@ -201,10 +246,10 @@ export default function Officer() {
             }`}
           >
             <Activity className="h-3.5 w-3.5" />
-            {t(lang, { sw: 'Hali ya mfumo', en: 'System status' })}: {health.status}
+            {t(lang, { sw: 'Hali ya mfumo', en: 'System status' })}: {healthStatusLabel(lang, health.status)}
           </span>
-          <span>DB {health.checks.database.status} ({health.checks.database.latencyMs}ms)</span>
-          <span>SW {health.checks.serviceWorker.status}</span>
+          <span>DB {upDownLabel(lang, health.checks.database.status)} ({health.checks.database.latencyMs}ms)</span>
+          <span>SW {activeInactiveLabel(lang, health.checks.serviceWorker.status)}</span>
           <span>{t(lang, { sw: 'Makosa 24h', en: 'Errors 24h' })}: {health.checks.errors.last24h}</span>
           <span>v{health.version}</span>
         </div>
@@ -249,9 +294,9 @@ export default function Officer() {
           <table className="w-full text-sm">
             <thead className="bg-paper text-tz-black/50 text-xs uppercase">
               <tr>
-                {columns.map((k) => (
-                  <th key={k} className="text-left px-4 py-3 font-semibold whitespace-nowrap">
-                    {k}
+                {columns.map((c) => (
+                  <th key={c.key} className="text-left px-4 py-3 font-semibold whitespace-nowrap">
+                    {t(lang, c.label)}
                   </th>
                 ))}
                 {actions && <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">{t(lang, { sw: 'Hatua', en: 'Actions' })}</th>}
@@ -275,22 +320,32 @@ export default function Officer() {
               {!loading &&
                 rows.map((r) => (
                   <tr key={r.id} className="border-t border-tz-black/5">
-                    {columns.map((k) => (
-                      <td key={k} className="px-4 py-3 whitespace-nowrap text-tz-black/80">
-                        {k === 'status' ? (
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL[String(r[k])] ?? 'bg-tz-black/5'}`}>
-                            {String(r[k])}
+                    {columns.map((c) => (
+                      <td key={c.key} className="px-4 py-3 whitespace-nowrap text-tz-black/80">
+                        {c.kind === 'status' ? (
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_PILL[String(r[c.key])] ?? 'bg-tz-black/5'}`}>
+                            {anyStatusLabel(lang, String(r[c.key]))}
                           </span>
-                        ) : FILE_COLUMNS[k] && r[k] ? (
-                          <button
-                            onClick={() => void openFile(FILE_COLUMNS[k], String(r[k]))}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-tz-blue hover:underline"
-                          >
-                            <Paperclip className="h-3 w-3" />
-                            {t(lang, { sw: 'Fungua', en: 'Open' })}
-                          </button>
+                        ) : c.kind === 'activity' ? (
+                          r[c.key] ? activityLabel(lang, String(r[c.key])) : '—'
+                        ) : c.kind === 'amount' ? (
+                          r[c.key] != null ? fmtAmount(r[c.key]) : '—'
+                        ) : c.kind === 'date' ? (
+                          fmtDate(r[c.key])
+                        ) : c.kind === 'file' ? (
+                          r[c.key] ? (
+                            <button
+                              onClick={() => void openFile(c.bucket!, String(r[c.key]))}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-tz-blue hover:underline"
+                            >
+                              <Paperclip className="h-3 w-3" />
+                              {t(lang, { sw: 'Fungua', en: 'Open' })}
+                            </button>
+                          ) : (
+                            <span className="text-tz-black/30">—</span>
+                          )
                         ) : (
-                          String(r[k] ?? '—')
+                          String(r[c.key] ?? '—')
                         )}
                       </td>
                     ))}

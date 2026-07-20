@@ -32,10 +32,23 @@ export default function Kadirio() {
   async function downloadPdf() {
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
+    const L = {
+      title: t(lang, { sw: 'KODI360 — Kadirio: Makadirio ya Kodi', en: 'KODI360 — Kadirio: Tax Estimate' }),
+      disclaimer: t(lang, { sw: 'Kielelezo tu — thibitisha kiwango rasmi na TRA.', en: 'Illustrative only — verify with TRA.' }),
+      turnover: t(lang, { sw: 'Mauzo ya mwaka', en: 'Annual turnover' }),
+      expenses: t(lang, { sw: 'Gharama za mwaka', en: 'Annual expenses' }),
+      profit: t(lang, { sw: 'Faida', en: 'Profit' }),
+      margin: t(lang, { sw: 'Ukingo wa faida', en: 'Profit margin' }),
+      presumptiveTax: t(lang, { sw: 'Kodi ya makadirio (kielelezo)', en: 'Presumptive tax (illustrative)' }),
+      taxOfTurnover: t(lang, { sw: 'Kodi kama % ya mauzo', en: 'Tax as % of turnover' }),
+      taxOfProfit: t(lang, { sw: 'Kodi kama % ya faida', en: 'Tax as % of profit' }),
+      overCeiling: t(lang, { sw: 'Haistahiki kodi ya makadirio: mauzo yamezidi TZS 100M', en: 'Not eligible: turnover exceeds TZS 100M' }),
+      excludedActivity: t(lang, { sw: 'Haistahiki kodi ya makadirio: shughuli imetengwa', en: 'Not eligible: excluded activity' }),
+    };
     doc.setFontSize(16);
-    doc.text('KODI360 — Kadirio: Makadirio ya Kodi', 14, 18);
+    doc.text(L.title, 14, 18);
     doc.setFontSize(10);
-    doc.text('Kielelezo tu — thibitisha kiwango rasmi na TRA. / Illustrative only — verify with TRA.', 14, 25);
+    doc.text(L.disclaimer, 14, 25);
 
     doc.setFontSize(11);
     let y = 38;
@@ -44,22 +57,17 @@ export default function Kadirio() {
       doc.text(value, 130, y);
       y += 8;
     };
-    line('Mauzo ya mwaka / Annual turnover', `TZS ${fmt(turnover)}`);
-    line('Gharama za mwaka / Annual expenses', `TZS ${fmt(expenses)}`);
-    line('Faida / Profit', `TZS ${fmt(result.profit)}`);
-    line('Ukingo wa faida / Profit margin', `${result.marginPct.toFixed(1)}%`);
+    line(L.turnover, `TZS ${fmt(turnover)}`);
+    line(L.expenses, `TZS ${fmt(expenses)}`);
+    line(L.profit, `TZS ${fmt(result.profit)}`);
+    line(L.margin, `${result.marginPct.toFixed(1)}%`);
     y += 4;
     if (result.eligible) {
-      line('Kodi ya makadirio (kielelezo) / Presumptive tax (illustrative)', `TZS ${fmt(result.presumptiveTax)}`);
-      line('Kodi kama % ya mauzo / Tax as % of turnover', `${result.taxAsPctOfTurnover.toFixed(2)}%`);
-      line('Kodi kama % ya faida / Tax as % of profit', `${result.taxAsPctOfProfit.toFixed(2)}%`);
+      line(L.presumptiveTax, `TZS ${fmt(result.presumptiveTax)}`);
+      line(L.taxOfTurnover, `${result.taxAsPctOfTurnover.toFixed(2)}%`);
+      line(L.taxOfProfit, `${result.taxAsPctOfProfit.toFixed(2)}%`);
     } else {
-      doc.text(
-        result.ineligibleReason === 'over-ceiling'
-          ? 'Haistahiki kodi ya makadirio: mauzo yamezidi TZS 100M / Not eligible: turnover exceeds TZS 100M'
-          : 'Haistahiki kodi ya makadirio: shughuli imetengwa / Not eligible: excluded activity',
-        14, y,
-      );
+      doc.text(result.ineligibleReason === 'over-ceiling' ? L.overCeiling : L.excludedActivity, 14, y);
     }
 
     doc.save('kodi360-kadirio-makadirio.pdf');

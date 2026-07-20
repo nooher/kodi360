@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { TAX_BASE_STATS } from '../lib/stats';
+import InstallButton from '../components/InstallButton';
 
 const MODULES = [
   {
@@ -99,6 +100,7 @@ export default function Home() {
               {t(lang, { sw: 'Anza usajili', en: 'Start registration' })}
               <ArrowRight className="h-4 w-4" />
             </Link>
+            <InstallButton />
           </div>
 
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-tz-black/60">

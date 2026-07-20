@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { getErrors, getErrorStats, clearErrors, type ErrorEntry } from '../lib/error-tracking';
 import { useLang, t } from '../lib/i18n';
+import { errorTypeLabel } from '../lib/statusLabels';
 
 export default function OfficerErrorLog() {
   const { lang } = useLang();
@@ -52,7 +53,7 @@ export default function OfficerErrorLog() {
                   <div key={e.id} className="rounded-lg bg-paper px-3 py-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono text-tz-black/50">{new Date(e.timestamp).toLocaleString()}</span>
-                      <span className="rounded-full bg-tz-black/5 px-2 py-0.5 text-[10px] uppercase">{e.type}</span>
+                      <span className="rounded-full bg-tz-black/5 px-2 py-0.5 text-[10px] uppercase">{errorTypeLabel(lang, e.type)}</span>
                     </div>
                     <p className="mt-1 text-tz-black/80 break-words">{e.message}</p>
                   </div>
