@@ -60,6 +60,7 @@ export async function syncPendingRecords(): Promise<{ synced: number; failed: nu
           receipt_no: r.receiptNo,
           item: r.item,
           amount: r.amount,
+          buyer_name: r.buyerName,
           buyer_phone: r.buyerPhone,
         });
         await db.receipts.update(r.id!, { synced: true });

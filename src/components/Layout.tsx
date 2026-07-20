@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { Menu, X, Globe } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
+import { MODULE_NAMES } from '../lib/moduleNames';
 import InstallButton from './InstallButton';
 
 const NAV = [
   { to: '/', sw: 'Nyumbani', en: 'Home' },
-  { to: '/rasimisha', sw: 'Rasimisha', en: 'Rasimisha' },
-  { to: '/kadirio', sw: 'Kadirio', en: 'Kadirio' },
-  { to: '/efd-lite', sw: 'EFD-Lite', en: 'EFD-Lite' },
-  { to: '/utatuzi', sw: 'Utatuzi', en: 'Utatuzi' },
-  { to: '/akili-wa-kodi', sw: 'Akili wa Kodi', en: 'Akili wa Kodi' },
+  { to: '/rasimisha', ...MODULE_NAMES.rasimisha },
+  { to: '/kadirio', ...MODULE_NAMES.kadirio },
+  { to: '/efd-lite', ...MODULE_NAMES.efdLite },
+  { to: '/utatuzi', ...MODULE_NAMES.utatuzi },
+  { to: '/akili-wa-kodi', ...MODULE_NAMES.akiliWaKodi },
 ];
 
 export default function Layout() {

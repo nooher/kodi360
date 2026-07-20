@@ -5,13 +5,14 @@ import {
 } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { TAX_BASE_STATS } from '../lib/stats';
+import { MODULE_NAMES } from '../lib/moduleNames';
 import InstallButton from '../components/InstallButton';
 
 const MODULES = [
   {
     to: '/rasimisha',
     icon: UserPlus,
-    name: 'Rasimisha',
+    name: MODULE_NAMES.rasimisha,
     sw: 'Usajili wa TIN wenye urahisi kwa wafanyabiashara wasio rasmi — hakuna anwani ya kudumu inayohitajika.',
     en: 'Frictionless TIN onboarding for informal traders — no fixed address required.',
     tag: { sw: 'Kupanua wigo wa kodi', en: 'Tax base expansion' },
@@ -19,7 +20,7 @@ const MODULES = [
   {
     to: '/kadirio',
     icon: Calculator,
-    name: 'Kadirio',
+    name: MODULE_NAMES.kadirio,
     sw: 'Makadirio ya kodi yenye haki, yanayozingatia faida — si mauzo tu — na maelezo rahisi ya kila namba.',
     en: 'Fair, margin-aware tax estimates — not just turnover — with a plain-language "why" for every number.',
     tag: { sw: 'Makadirio rahisi kwa SME', en: 'Simplified SME estimation' },
@@ -27,7 +28,7 @@ const MODULES = [
   {
     to: '/efd-lite',
     icon: Receipt,
-    name: 'EFD-Lite',
+    name: MODULE_NAMES.efdLite,
     sw: 'Risiti za kielektroniki nafuu kwa simu — mbadala wa mashine ya EFD ya milioni 2+.',
     en: 'Cheap phone-based electronic receipts — an alternative to the TZS 2M+ EFD machine.',
     tag: { sw: 'Kupunguza gharama za makusanyo', en: 'Collection cost reduction' },
@@ -35,7 +36,7 @@ const MODULES = [
   {
     to: '/utatuzi',
     icon: Scale,
-    name: 'Utatuzi',
+    name: MODULE_NAMES.utatuzi,
     sw: 'Ufuatiliaji wa pingamizi na rufaa wenye muda wa kisheria unaoonekana wazi.',
     en: 'Objection & appeal tracking with statutory timelines made visible to everyone.',
     tag: { sw: 'Utatuzi wa haraka wa migogoro', en: 'Faster dispute resolution' },
@@ -43,7 +44,7 @@ const MODULES = [
   {
     to: '/akili-wa-kodi',
     icon: Bot,
-    name: 'Akili wa Kodi',
+    name: MODULE_NAMES.akiliWaKodi,
     sw: 'Msaidizi wa AI wa kodi anayefanya kazi bila mtandao — sera zote za TRA ndani ya simu yako.',
     en: 'An offline AI tax assistant — all of TRA\'s policy knowledge, right on your phone.',
     tag: { sw: 'AI katika huduma', en: 'AI in service delivery' },
@@ -91,7 +92,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 rounded-xl bg-tz-green px-5 py-3 font-semibold text-white hover:bg-tz-green-dark transition-colors"
             >
               <Bot className="h-4.5 w-4.5" />
-              {t(lang, { sw: 'Jaribu Akili wa Kodi', en: 'Try Akili wa Kodi' })}
+              {t(lang, { sw: 'Jaribu Akili wa Kodi', en: `Try ${MODULE_NAMES.akiliWaKodi.en}` })}
             </Link>
             <Link
               to="/rasimisha"
@@ -155,7 +156,7 @@ export default function Home() {
                 <div className="h-11 w-11 rounded-xl bg-tz-green/10 flex items-center justify-center text-tz-green-dark group-hover:bg-tz-green group-hover:text-white transition-colors">
                   <Icon className="h-5.5 w-5.5" />
                 </div>
-                <h3 className="mt-4 font-bold text-lg text-tz-black">{m.name}</h3>
+                <h3 className="mt-4 font-bold text-lg text-tz-black">{t(lang, m.name)}</h3>
                 <p className="mt-1.5 text-sm text-tz-black/65 leading-snug">{t(lang, { sw: m.sw, en: m.en })}</p>
                 <span className="mt-3 inline-block text-xs font-semibold text-tz-blue">
                   {t(lang, m.tag)}

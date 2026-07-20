@@ -1,23 +1,35 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Receipt, WifiOff, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useLang, t } from '../lib/i18n';
-import { db, genReceiptNo } from '../lib/db';
+import { Receipt, WifiOff, Clock, AlertCircle, CheckCircle2, Store } from 'lucide-react';
+import { useLang, t, type Lang } from '../lib/i18n';
+import { db, genReceiptNo, type ReceiptRecord } from '../lib/db';
 import { receiptSchema, fieldErrors } from '../lib/validation';
 import { checkRateLimit } from '../lib/rate-limit';
 import { syncPendingRecords } from '../lib/sync';
+import { MODULE_NAMES } from '../lib/moduleNames';
+import { activityLabel } from '../lib/statusLabels';
+import { useTraderAuth } from '../hooks/useTraderAuth';
 import TraderHeader from '../components/TraderHeader';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('en-TZ').format(Math.round(n));
 }
 
+function fmtDateTime(ts: number, lang: Lang): string {
+  return new Date(ts).toLocaleString(lang === 'sw' ? 'sw-TZ' : 'en-TZ', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 export default function EfdLite() {
   const { lang } = useLang();
+  const { trader } = useTraderAuth();
   const [item, setItem] = useState('');
   const [amount, setAmount] = useState('');
+  const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
-  const [lastReceipt, setLastReceipt] = useState<string | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptRecord | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [limitMsg, setLimitMsg] = useState('');
 
@@ -32,7 +44,7 @@ export default function EfdLite() {
     e.preventDefault();
     setLimitMsg('');
 
-    const parsed = receiptSchema.safeParse({ item, amount, buyerPhone });
+    const parsed = receiptSchema.safeParse({ item, amount, buyerName, buyerPhone });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error));
       return;
@@ -50,18 +62,20 @@ export default function EfdLite() {
       return;
     }
 
-    const receiptNo = genReceiptNo();
-    await db.receipts.add({
-      receiptNo,
+    const record: ReceiptRecord = {
+      receiptNo: genReceiptNo(),
       item: parsed.data.item,
       amount: parsed.data.amount,
+      buyerName: parsed.data.buyerName || undefined,
       buyerPhone: parsed.data.buyerPhone || undefined,
       createdAt: Date.now(),
       synced: false,
-    });
-    setLastReceipt(receiptNo);
+    };
+    const id = await db.receipts.add(record);
+    setLastReceipt({ ...record, id });
     setItem('');
     setAmount('');
+    setBuyerName('');
     setBuyerPhone('');
     void syncPendingRecords();
   }
@@ -73,7 +87,7 @@ export default function EfdLite() {
         <div className="h-11 w-11 rounded-xl bg-tz-green flex items-center justify-center text-white">
           <Receipt className="h-6 w-6" />
         </div>
-        <h1 className="font-bold text-2xl text-tz-black">EFD-Lite</h1>
+        <h1 className="font-bold text-2xl text-tz-black">{t(lang, MODULE_NAMES.efdLite)}</h1>
       </div>
       <p className="text-tz-black/60 mb-8 max-w-2xl">
         {t(lang, {
@@ -98,7 +112,13 @@ export default function EfdLite() {
               {errors.amount && <p className="mt-1 text-xs text-red-600">{errors.amount}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-tz-black mb-1.5">{t(lang, { sw: 'Namba ya mteja (si lazima)', en: 'Buyer phone (optional)' })}</label>
+              <label className="block text-sm font-semibold text-tz-black mb-1.5">{t(lang, { sw: 'Jina la mnunuaji (si lazima)', en: 'Buyer name (optional)' })}</label>
+              <input value={buyerName} onChange={(e) => setBuyerName(e.target.value)}
+                className="w-full rounded-lg border border-tz-black/15 px-3 py-2.5 text-sm" />
+              {errors.buyerName && <p className="mt-1 text-xs text-red-600">{errors.buyerName}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-tz-black mb-1.5">{t(lang, { sw: 'Namba ya mnunuaji (si lazima)', en: 'Buyer phone (optional)' })}</label>
               <input value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)}
                 className="w-full rounded-lg border border-tz-black/15 px-3 py-2.5 text-sm" />
               {errors.buyerPhone && <p className="mt-1 text-xs text-red-600">{errors.buyerPhone}</p>}
@@ -115,9 +135,31 @@ export default function EfdLite() {
           </form>
 
           {lastReceipt && (
-            <div className="mt-4 rounded-2xl border-2 border-dashed border-tz-green p-5 bg-tz-green/5 text-center">
-              <p className="text-xs text-tz-black/50">{t(lang, { sw: 'Risiti imetolewa', en: 'Receipt issued' })}</p>
-              <p className="font-mono font-bold text-lg text-tz-green-dark mt-1">{lastReceipt}</p>
+            <div className="mt-4 rounded-2xl border-2 border-dashed border-tz-green p-5 bg-tz-green/5">
+              <div className="text-center">
+                <p className="text-xs text-tz-black/50">{t(lang, { sw: 'Risiti imetolewa', en: 'Receipt issued' })}</p>
+                <p className="font-mono font-bold text-lg text-tz-green-dark mt-1">{lastReceipt.receiptNo}</p>
+                <p className="text-xs text-tz-black/45 mt-1">{fmtDateTime(lastReceipt.createdAt, lang)}</p>
+              </div>
+
+              {trader && (
+                <div className="mt-4 pt-4 border-t border-tz-green/20 flex items-start gap-2 text-xs text-tz-black/70">
+                  <Store className="h-3.5 w-3.5 mt-0.5 shrink-0 text-tz-black/40" />
+                  <div>
+                    <p className="font-semibold text-tz-black">{trader.name}</p>
+                    <p>{trader.phone} · {activityLabel(lang, trader.activity)}</p>
+                    <p className="text-tz-black/45">{trader.idType.toUpperCase()}: {trader.idNumber}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-tz-green/20 text-xs text-tz-black/70">
+                <p className="font-semibold text-tz-black">{t(lang, { sw: 'Aliyepewa risiti', en: 'Issued to' })}</p>
+                <p>
+                  {lastReceipt.buyerName || t(lang, { sw: '(hakuna jina)', en: '(no name given)' })}
+                  {lastReceipt.buyerPhone ? ` · ${lastReceipt.buyerPhone}` : ''}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -139,8 +181,9 @@ export default function EfdLite() {
             {(receipts ?? []).map((r) => (
               <div key={r.id} className="rounded-xl border border-tz-black/10 bg-paper p-3 flex items-center justify-between">
                 <div>
-                  <p className="font-mono text-xs text-tz-black/50">{r.receiptNo}</p>
+                  <p className="font-mono text-xs text-tz-black/50">{r.receiptNo} · {fmtDateTime(r.createdAt, lang)}</p>
                   <p className="text-sm font-medium text-tz-black">{r.item}</p>
+                  {r.buyerName && <p className="text-xs text-tz-black/45">{t(lang, { sw: 'Kwa', en: 'To' })}: {r.buyerName}</p>}
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-tz-black">TZS {fmt(r.amount)}</p>

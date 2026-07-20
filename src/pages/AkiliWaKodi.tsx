@@ -3,6 +3,7 @@ import { Bot, Send, WifiOff, User, ExternalLink } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { akili, createAkiliSession, type AkiliSession } from '../akili';
 import type { AkiliAnswer } from '../akili/types';
+import { MODULE_NAMES } from '../lib/moduleNames';
 
 interface Message {
   id: string;
@@ -67,7 +68,7 @@ export default function AkiliWaKodi() {
           <Bot className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="font-bold text-lg text-tz-black">Akili wa Kodi</h1>
+          <h1 className="font-bold text-lg text-tz-black">{t(lang, MODULE_NAMES.akiliWaKodi)}</h1>
           <p className="text-xs text-tz-black/50 inline-flex items-center gap-1">
             <WifiOff className="h-3 w-3" />
             {t(lang, { sw: 'Inafanya kazi bila mtandao — hakuna data inayotumwa nje', en: 'Runs fully offline — no data ever leaves your device' })}

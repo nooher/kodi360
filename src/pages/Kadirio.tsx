@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Calculator, Download, AlertTriangle, Info } from 'lucide-react';
 import { useLang, t } from '../lib/i18n';
 import { estimateKadirio, PRESUMPTIVE_CEILING, type BusinessActivity } from '../lib/kadirio';
+import { MODULE_NAMES } from '../lib/moduleNames';
 
 const ACTIVITIES: { value: BusinessActivity; sw: string; en: string }[] = [
   { value: 'general', sw: 'Biashara ya jumla', en: 'General business' },
@@ -79,7 +80,7 @@ export default function Kadirio() {
         <div className="h-11 w-11 rounded-xl bg-tz-green flex items-center justify-center text-white">
           <Calculator className="h-6 w-6" />
         </div>
-        <h1 className="font-bold text-2xl text-tz-black">Kadirio</h1>
+        <h1 className="font-bold text-2xl text-tz-black">{t(lang, MODULE_NAMES.kadirio)}</h1>
       </div>
       <p className="text-tz-black/60 mb-8 max-w-2xl">
         {t(lang, {

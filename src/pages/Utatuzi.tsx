@@ -6,6 +6,7 @@ import { db, genReference } from '../lib/db';
 import { computeTimeline } from '../lib/utatuzi';
 import { disputeSchema, fieldErrors } from '../lib/validation';
 import { syncPendingRecords } from '../lib/sync';
+import { MODULE_NAMES } from '../lib/moduleNames';
 import TraderHeader from '../components/TraderHeader';
 
 function fmt(n: number): string {
@@ -83,7 +84,7 @@ export default function Utatuzi() {
         <div className="h-11 w-11 rounded-xl bg-tz-green flex items-center justify-center text-white">
           <Scale className="h-6 w-6" />
         </div>
-        <h1 className="font-bold text-2xl text-tz-black">Utatuzi</h1>
+        <h1 className="font-bold text-2xl text-tz-black">{t(lang, MODULE_NAMES.utatuzi)}</h1>
       </div>
       <p className="text-tz-black/60 mb-8 max-w-2xl">
         {t(lang, {

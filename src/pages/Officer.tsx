@@ -42,8 +42,9 @@ const COLUMNS: Record<Tab, ColumnDef[]> = {
     { key: 'receipt_no', label: { sw: 'Namba ya risiti', en: 'Receipt no.' } },
     { key: 'item', label: { sw: 'Bidhaa/huduma', en: 'Item/service' } },
     { key: 'amount', label: { sw: 'Kiasi (TZS)', en: 'Amount (TZS)' }, kind: 'amount' },
-    { key: 'buyer_phone', label: { sw: 'Simu ya mteja', en: 'Buyer phone' } },
-    { key: 'created_at', label: { sw: 'Tarehe', en: 'Date' }, kind: 'date' },
+    { key: 'buyer_name', label: { sw: 'Jina la mnunuaji', en: 'Buyer name' } },
+    { key: 'buyer_phone', label: { sw: 'Simu ya mnunuaji', en: 'Buyer phone' } },
+    { key: 'created_at', label: { sw: 'Tarehe na saa', en: 'Date & time' }, kind: 'date' },
   ],
   disputes: [
     { key: 'reference', label: { sw: 'Kumbukumbu', en: 'Reference' } },
@@ -99,7 +100,8 @@ function fmtAmount(n: unknown): string {
 function fmtDate(v: unknown): string {
   if (!v) return '—';
   const d = new Date(String(v));
-  return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleDateString();
+  if (Number.isNaN(d.getTime())) return String(v);
+  return d.toLocaleString('en-TZ', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 const STATUS_PILL: Record<string, string> = {

@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { traderSignUpSchema, fieldErrors } from '../lib/validation';
 import { checkRateLimit } from '../lib/rate-limit';
 import { registrationStatusLabel } from '../lib/statusLabels';
+import { MODULE_NAMES } from '../lib/moduleNames';
 import type { TraderIdType } from '../types';
 
 const ACTIVITIES = [
@@ -201,7 +202,7 @@ export default function Rasimisha() {
         <div className="h-11 w-11 rounded-xl bg-tz-green flex items-center justify-center text-white">
           <UserPlus className="h-6 w-6" />
         </div>
-        <h1 className="font-bold text-2xl text-tz-black">Rasimisha</h1>
+        <h1 className="font-bold text-2xl text-tz-black">{t(lang, MODULE_NAMES.rasimisha)}</h1>
       </div>
       <p className="text-tz-black/60 mb-6 max-w-2xl">
         {t(lang, {

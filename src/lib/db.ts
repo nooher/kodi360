@@ -11,6 +11,7 @@ export interface ReceiptRecord {
   receiptNo: string;
   item: string;
   amount: number;
+  buyerName?: string;
   buyerPhone?: string;
   createdAt: number;
   synced: boolean;

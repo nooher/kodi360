@@ -49,6 +49,7 @@ export type TraderLoginInput = z.infer<typeof traderLoginSchema>;
 export const receiptSchema = z.object({
   item: z.string().trim().min(1, { message: 'Andika bidhaa/huduma' }).max(200),
   amount: z.coerce.number().positive({ message: 'Kiasi lazima kiwe zaidi ya sifuri' }).max(1_000_000_000),
+  buyerName: z.string().trim().max(200).optional().or(z.literal('')),
   buyerPhone: z
     .string()
     .trim()
