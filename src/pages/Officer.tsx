@@ -7,6 +7,7 @@ import { withApiLogging } from '../lib/api-logger';
 import { getHealthStatus, type HealthStatus } from '../lib/health';
 import OfficerSecurity from '../components/OfficerSecurity';
 import OfficerErrorLog from '../components/OfficerErrorLog';
+import ConsoleStats from '../components/ConsoleStats';
 
 type Tab = 'registrations' | 'receipts' | 'disputes';
 
@@ -36,15 +37,19 @@ const TABS: { id: Tab; icon: typeof Users; sw: string; en: string }[] = [
   { id: 'disputes', icon: Scale, sw: 'Migogoro (Utatuzi)', en: 'Disputes (Utatuzi)' },
 ];
 
-// Status workflow per table. Receipts have no workflow (they're immutable records).
-const REGISTRATION_ACTIONS: { status: string; sw: string; en: string; tone: string }[] = [
+// Status workflow per table — maker-checker: `officer` can only move a case to
+// the review/take-up state; finalizing (issue TIN, reject, resolve) is
+// admin-only, enforced both here (hidden from officers) AND at the database
+// via RLS WITH CHECK (migration 0007) so it can't be bypassed by calling the
+// API directly. Receipts have no workflow (they're immutable records).
+const REGISTRATION_ACTIONS: { status: string; sw: string; en: string; tone: string; finalOnly?: boolean }[] = [
   { status: 'reviewed', sw: 'Kagua', en: 'Review', tone: 'bg-tz-blue text-white hover:bg-tz-blue/90' },
-  { status: 'tin_issued', sw: 'Toa TIN', en: 'Issue TIN', tone: 'bg-tz-green text-white hover:bg-tz-green-dark' },
-  { status: 'rejected', sw: 'Kataa', en: 'Reject', tone: 'bg-red-600 text-white hover:bg-red-700' },
+  { status: 'tin_issued', sw: 'Toa TIN', en: 'Issue TIN', tone: 'bg-tz-green text-white hover:bg-tz-green-dark', finalOnly: true },
+  { status: 'rejected', sw: 'Kataa', en: 'Reject', tone: 'bg-red-600 text-white hover:bg-red-700', finalOnly: true },
 ];
-const DISPUTE_ACTIONS: { status: string; sw: string; en: string; tone: string }[] = [
+const DISPUTE_ACTIONS: { status: string; sw: string; en: string; tone: string; finalOnly?: boolean }[] = [
   { status: 'under_review', sw: 'Chukua', en: 'Take up', tone: 'bg-tz-blue text-white hover:bg-tz-blue/90' },
-  { status: 'resolved', sw: 'Maliza', en: 'Resolve', tone: 'bg-tz-green text-white hover:bg-tz-green-dark' },
+  { status: 'resolved', sw: 'Maliza', en: 'Resolve', tone: 'bg-tz-green text-white hover:bg-tz-green-dark', finalOnly: true },
 ];
 
 const STATUS_PILL: Record<string, string> = {
@@ -149,7 +154,9 @@ export default function Officer() {
     }
   }
 
-  const actions = tab === 'registrations' ? REGISTRATION_ACTIONS : tab === 'disputes' ? DISPUTE_ACTIONS : null;
+  const isAdmin = isDemoMode ? true : user?.role === 'admin';
+  const allActions = tab === 'registrations' ? REGISTRATION_ACTIONS : tab === 'disputes' ? DISPUTE_ACTIONS : null;
+  const actions = allActions ? allActions.filter((a) => isAdmin || !a.finalOnly) : null;
   const columns = rows[0] ? Object.keys(rows[0]).filter((k) => k !== 'id') : [];
 
   return (
@@ -161,8 +168,13 @@ export default function Officer() {
           </div>
           <div>
             <p className="font-bold text-tz-black">{user?.name}</p>
-            <p className="text-xs text-tz-black/50">
-              {user?.role} {isDemoMode && `· ${t(lang, { sw: 'hali ya demo', en: 'demo mode' })}`}
+            <p className="text-xs flex items-center gap-1.5">
+              <span className={`rounded-full px-2 py-0.5 font-semibold ${isAdmin ? 'bg-tz-black/10 text-tz-black' : 'bg-tz-blue/10 text-tz-blue'}`}>
+                {isAdmin ? t(lang, { sw: 'Admin', en: 'Admin' }) : t(lang, { sw: 'Afisa', en: 'Officer' })}
+              </span>
+              <span className="text-tz-black/40">
+                {isDemoMode && t(lang, { sw: 'hali ya demo', en: 'demo mode' })}
+              </span>
             </p>
           </div>
         </div>
@@ -174,6 +186,8 @@ export default function Officer() {
           {t(lang, { sw: 'Toka', en: 'Log out' })}
         </button>
       </div>
+
+      <ConsoleStats isDemoMode={isDemoMode} />
 
       {health && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-tz-black/10 bg-white px-4 py-2.5 text-xs text-tz-black/60">
@@ -219,6 +233,15 @@ export default function Officer() {
 
       {actionError && (
         <p className="mb-3 text-sm text-red-600">{actionError}</p>
+      )}
+
+      {!isAdmin && allActions && allActions.some((a) => a.finalOnly) && (
+        <p className="mb-3 text-xs text-tz-black/50">
+          {t(lang, {
+            sw: 'Kama Afisa, unaweza kukagua/kuchukua kesi. Kufunga (Toa TIN/Kataa/Maliza) ni kwa Admin pekee — hii inasimamiwa na database, si UI tu.',
+            en: 'As an Officer, you can review/take up a case. Finalizing (Issue TIN/Reject/Resolve) is admin-only — enforced by the database, not just the UI.',
+          })}
+        </p>
       )}
 
       <div className="rounded-2xl border border-tz-black/10 bg-white overflow-hidden">
